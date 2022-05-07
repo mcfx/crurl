@@ -117,7 +117,7 @@ void CrurlDelegate::OnReadCompleted(net::URLRequest* request, int bytes_read) {
 }
 
 void CrurlDelegate::OnResponseCompleted(net::URLRequest* request) {
-  std::cout << data_received_;
+  std::cout << data_received_ << std::flush;
   std::move(on_complete_).Run();
 }
 
@@ -183,9 +183,9 @@ void clear() {
   _exit(0);
   // I don't know how to properly deal with
   // "FATAL:spdy_session.cc(1011) Check failed: !in_io_loop_."
-  request.reset();
-  context.reset();
-  std::move(quit).Run();
+  // request.reset();
+  // context.reset();
+  // std::move(quit).Run();
 }
 
 void set_user(const std::string& user) {
@@ -314,12 +314,12 @@ int main(int argc, char* argv[]) {
   }
   base::RunLoop run_loop;
   quit = run_loop.QuitClosure();
-  delegate.set_on_complete(base::Bind(clear));
+  delegate.set_on_complete(base::BindOnce(clear));
 
   base::Thread worker_thread("worker");
   base::Thread::Options thread_options(base::MessagePumpType::IO, 0);
-  worker_thread.StartWithOptions(thread_options);
-  worker_thread.task_runner()->PostTask(FROM_HERE, base::Bind(work));
+  worker_thread.StartWithOptions(std::move(thread_options));
+  worker_thread.task_runner()->PostTask(FROM_HERE, base::BindOnce(work));
   run_loop.Run();
   worker_thread.Stop();
 }
